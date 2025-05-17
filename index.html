@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>店舗アンケート</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    h1 { font-size: 28px; color: #2c3e50; text-align: center; margin-bottom: 30px; }
+    label { display: block; margin-top: 20px; }
+    select, textarea, input[type="text"] { width: 100%; padding: 8px; margin-top: 8px; box-sizing: border-box; }
+    .hidden { display: none; }
+    button { margin-top: 20px; padding: 10px 20px; background-color: #27ae60; color: white; border: none; cursor: pointer; }
+    .thank-you { display: none; margin-top: 30px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <h1>店舗アンケート</h1>
+
+  <form id="survey-form">
+    <label>① 来店頻度 <span style="color:red;">*</span>
+      <select id="visitFrequency" required>
+        <option value="">選択してください</option>
+        <option>初めて来店した</option>
+        <option>月に1回未満</option>
+        <option>月に1〜2回</option>
+        <option>週に1回程度</option>
+        <option>週に2回以上</option>
+      </select>
+    </label>
+
+    <label>② 当店を知ったきっかけ <span style="color:red;">*</span>
+      <select id="referralSource" required>
+        <option value="">選択してください</option>
+        <option>通りがかりに見かけた</option>
+        <option>家族・友人からの紹介</option>
+        <option>SNS</option>
+        <option>Googleや食べログ</option>
+        <option>チラシ・広告</option>
+        <option>その他</option>
+      </select>
+    </label>
+
+    <div id="referralOther" class="hidden">
+      <label>その他の詳細
+        <input type="text" id="referralOtherText">
+      </label>
+    </div>
+
+    <label>③ 当店の良かった点（複数選択可）
+      <div>
+        <label><input type="checkbox" name="goodPoints" value="パンの味や品質"> パンの味や品質</label><br>
+        <label><input type="checkbox" name="goodPoints" value="値段設定"> 値段設定</label><br>
+        <label><input type="checkbox" name="goodPoints" value="商品のバリエーション"> 商品のバリエーション</label><br>
+        <label><input type="checkbox" name="goodPoints" value="接客態度"> 接客態度</label><br>
+        <label><input type="checkbox" name="goodPoints" value="店舗の衛生管理"> 店舗の衛生管理</label><br>
+        <label><input type="checkbox" name="goodPoints" value="店舗の雰囲気"> 店舗の雰囲気</label><br>
+        <label><input type="checkbox" id="goodOtherCheck" value="その他"> その他</label>
+        <input type="text" id="goodOtherText" class="hidden" placeholder="その他の内容を入力">
+      </div>
+    </label>
+
+    <label>④ 改善してほしい点（複数選択可）
+      <div>
+        <label><input type="checkbox" name="badPoints" value="パンの味や品質"> パンの味や品質</label><br>
+        <label><input type="checkbox" name="badPoints" value="値段設定"> 値段設定</label><br>
+        <label><input type="checkbox" name="badPoints" value="商品のバリエーション"> 商品のバリエーション</label><br>
+        <label><input type="checkbox" name="badPoints" value="接客態度"> 接客態度</label><br>
+        <label><input type="checkbox" name="badPoints" value="店舗の衛生管理"> 店舗の衛生管理</label><br>
+        <label><input type="checkbox" name="badPoints" value="店舗の雰囲気"> 店舗の雰囲気</label><br>
+        <label><input type="checkbox" id="badOtherCheck" value="その他"> その他</label>
+        <input type="text" id="badOtherText" class="hidden" placeholder="その他の内容を入力">
+      </div>
+    </label>
+
+    <label>⑤ 当店へのご感想
+      <textarea id="feedback" rows="4"></textarea>
+    </label>
+
+    <button type="submit">送信</button>
+  </form>
+
+  <div class="thank-you" id="thankYouMsg">
+    <h2>ご回答ありがとうございました！</h2>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore-compat.js"></script>
+
+  <script>
+    // 🔧 Firebase設定（あなたのプロジェクト情報に書き換えてください）
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBigATbxE2-_rz23xIXx8fk3VTCzgCOTvE",
+    authDomain: "isekiya-survey.firebaseapp.com",
+    projectId: "isekiya-survey",
+    storageBucket: "isekiya-survey.firebasestorage.app",
+    messagingSenderId: "289935528710",
+    appId: "1:289935528710:web:283975a8366d483b514487",
+    measurementId: "G-D12HF5HGVN"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+
+    
+    
+
+    // Firebase初期化
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 入力フォーム
+    const form = document.getElementById("survey-form");
+    const thankYou = document.getElementById("thankYouMsg");
+
+    const referralSource = document.getElementById("referralSource");
+    const referralOther = document.getElementById("referralOther");
+    const referralOtherText = document.getElementById("referralOtherText");
+
+    const goodOtherCheck = document.getElementById("goodOtherCheck");
+    const goodOtherText = document.getElementById("goodOtherText");
+    const badOtherCheck = document.getElementById("badOtherCheck");
+    const badOtherText = document.getElementById("badOtherText");
+
+    referralSource.addEventListener("change", () => {
+      referralOther.classList.toggle("hidden", referralSource.value !== "その他");
+    });
+
+    goodOtherCheck.addEventListener("change", () => {
+      goodOtherText.classList.toggle("hidden", !goodOtherCheck.checked);
+    });
+
+    badOtherCheck.addEventListener("change", () => {
+      badOtherText.classList.toggle("hidden", !badOtherCheck.checked);
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const goodPoints = Array.from(document.querySelectorAll('input[name="goodPoints"]:checked')).map(e => e.value);
+      const badPoints = Array.from(document.querySelectorAll('input[name="badPoints"]:checked')).map(e => e.value);
+
+      if (goodOtherCheck.checked) goodPoints.push(goodOtherText.value);
+      if (badOtherCheck.checked) badPoints.push(badOtherText.value);
+
+      const data = {
+        visitFrequency: document.getElementById("visitFrequency").value,
+        referralSource: referralSource.value,
+        referralOther: referralOtherText.value,
+        goodPoints: goodPoints,
+        badPoints: badPoints,
+        feedback: document.getElementById("feedback").value,
+        timestamp: new Date()
+      };
+
+      try {
+        await db.collection("surveyResponses").add(data);
+        form.style.display = "none";
+        thankYou.style.display = "block";
+      } catch (err) {
+        alert("送信に失敗しました: " + err.message);
+      }
+    });
+  </script>
+
+</body>
+</html>
